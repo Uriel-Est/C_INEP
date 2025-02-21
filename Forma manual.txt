@@ -1,0 +1,66 @@
+library(ggplot2)
+library(sf)
+library(dplyr)
+library(readr)
+library(utf8)
+library(data.table)
+library(rio)
+
+#Carregar banco de dados
+dados22 <- read_csv2("endereço", locale = locale(encoding = "UTF-8"))
+
+#Corrigir sinais ortográficos
+dados22 <- as.data.frame(lapply(dados22, function(x) if (is.character(x)) iconv(x, from = "latin1", to = "UTF-8") else x))
+
+
+# Aplicando filtros -------------------------------------------------------
+
+#federação
+PBfiltro22 <- dados22 %>%
+  filter(SG_UF == "PB")
+
+#encontrando o nome de cada município
+unique(PBfiltro22$NO_MUNICIPIO)
+
+#filtrando a cidade em foco
+JPfiltro22 <- PBfiltro22 %>%
+  filter(NO_MUNICIPIO == "João Pessoa")
+
+#limpando colunas vazias
+JPfiltro22 <- JPfiltro22 %>%
+  select(where(~ !all(is.na(.))))
+
+#filtrando para que fiquem apenas as escolas públicas de nível básico
+escolas_pub22 <- JPfiltro22 %>%
+  filter(TP_DEPENDENCIA %in% c(2, 3)) #2: estadual ; 3: municipal
+
+#filtrar bairro para melhor estudo demográfico com base em setor censitário
+escolas_banc22 <- escolas_pub22 %>%
+  filter(NO_BAIRRO == "BANCARIOS")
+
+#criação de um database com as variáveis escolhidas que são:
+mat22 <- escolas_banc22 %>%
+  select(NU_ANO_CENSO, SG_UF, NO_MUNICIPIO, NO_BAIRRO, NO_ENTIDADE, DS_ENDERECO,QT_MAT_INF, QT_MAT_FUND, QT_MAT_MED, QT_MAT_PROF, QT_MAT_EJA, QT_MAT_ESP)
+
+NU_ANO_CENSO: Ano do Censo Escolar
+
+SG_UF: Sigla da Unidade Federativa (Estado)
+
+NO_MUNICIPIO: Nome do Município
+
+NO_BAIRRO: Nome do Bairro
+
+NO_ENTIDADE: Nome da Entidade Escolar (Escola)
+
+QT_MAT_INF: Quantidade de matrículas na educação infantil.
+
+QT_MAT_FUND: Quantidade de matrículas no ensino fundamental.
+
+QT_MAT_MED: Quantidade de matrículas no ensino médio.
+
+QT_MAT_PROF: Quantidade de matrículas na educação profissional.
+
+QT_MAT_EJA: Quantidade de matrículas na Educação de Jovens e Adultos (EJA).
+
+QT_MAT_ESP: Quantidade de matrículas na educação especial.
+
