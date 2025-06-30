@@ -6,6 +6,7 @@ library(archive)    # Para extrair o ZIP
 library(stringr)    # Para converter o CSV em .parquet
 library(arrow)      # Para salvar e ler em .parquet
 library(fs)         # Para lidar com caminhos e arquivos
+library(purrr)      # Para baixar múltiplos anos de uma só vez
 
 # Função para processar os dados
 processar_dados_censo <- function(ano, dir) {
@@ -49,7 +50,7 @@ processar_dados_censo <- function(ano, dir) {
   )
   
   # 5. Localizar arquivos CSV
-  arquivos.csv <- dir(dir_input, pattern = "\\.csv$", recursive = T, full.names = T)
+  arquivos.csv <- dir(dir_input, pattern = "\\.csv$", recursive = T, full.names = T, ignore.case = T)
   if (length(arquivos.csv) == 0) stop("Nenhum arquivo CSV encontrnado após extração.")
   
   # 6. Converter cada CSV em Parquet e salvar na mesma pasta
@@ -67,7 +68,11 @@ processar_dados_censo <- function(ano, dir) {
     
   }
   
-  message("Todos os arquivos foram convertidos em Parquet.")
+  #7. Remover arquivos CSV (mantendo apenas os .parquet)
+  file_delete(arquivos.csv)
+  message("🧹 Arquivos CSV removidos. Apenas .parquet permanecem.")
+  
+  message("Processo finalizado com sucesso.")
   ## A primeira etapa acaba aqui salvando o .csv extraido pelo archive_extract e salvando em .parquet
 }
 
@@ -76,10 +81,19 @@ processar_dados_censo <- function(ano, dir) {
 #dir <- "C:/Users/Uriel Holanda/Documents/txt/UFPB Estatística/Observatório Social Censo Escolar/"
 dir <- "./"
 
-processar_dados_censo(2022, "./")
+processar_dados_censo(2024, dir)
 
 # Executar para 2022 (se o link existir)
-dados_2022 <- processar_dados_censo(2022, dir)
+dados_2024 <- processar_dados_censo(2024, dir)
 
-# Se 2022 falhar, teste com 2021:
-# dados_2021 <- processar_dados_censo(2021, dir)
+anos <- 2007:2024
+walk(anos, function(ano) {
+  tryCatch({
+    processar_dados_censo(ano, dir)
+    Sys.sleep(3)  # pausa entre os downloads
+  }, error = function(e) {
+    message("⚠️ Falha ao processar o ano ", ano, ": ", e$message)
+  })
+})
+
+#-------------------------------------------------------
