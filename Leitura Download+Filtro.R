@@ -49,7 +49,8 @@ processar_dados_censo <- function(ano, dir) {
       file_path <- list.files(
         dir_input,
         pattern = "microdados_ed_basica_.*\\.csv", 
-        full.names = TRUE
+        full.names = TRUE,
+        recursive = T
       )
       
       if (length(file_path) == 0) {
@@ -57,9 +58,9 @@ processar_dados_censo <- function(ano, dir) {
       }
       
       # 6. Ler e processar os dados
-      dados <- read_csv2(
-        file_path,
-        locale = locale(encoding = "UTF-8")
+      # library(data.table)
+      dados <- fread(
+        file_path
       ) %>%
         # Converter caracteres para UTF-8
         mutate(across(where(is.character), ~iconv(., from = "latin1", to = "UTF-8"))) %>%
@@ -87,7 +88,8 @@ processar_dados_censo <- function(ano, dir) {
 
 #-------------------------------------------------------
 # Exemplo de uso:
-dir <- "C:/Users/Uriel Holanda/Documents/txt/UFPB Estatística/Observatório Social Censo Escolar/"
+#dir <- "C:/Users/Uriel Holanda/Documents/txt/UFPB Estatística/Observatório Social Censo Escolar/"
+dir <- "./"
 
 # Executar para 2022 (se o link existir)
 dados_2022 <- processar_dados_censo(2022, dir)
