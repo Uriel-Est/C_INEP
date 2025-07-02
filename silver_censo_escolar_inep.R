@@ -3,6 +3,7 @@ library(arrow)
 library(fs)
 library(purrr)
 library(stringr)
+library(ggplot2)
 
 # Criar um diretório silver
 dir.create("input_silver", showWarnings = F, recursive = T)
@@ -26,7 +27,7 @@ agregar_municipio <- function(caminho) {
     group_by(CO_MUNICIPIO) %>%
     summarise(across(where(is.numeric), ~ sum(.x, na.rm = T)), .groups = "drop")
   # Caminho de saída
-  saida <- file.path(dir_output, paste0("dados_censo_escolar_inep", ano, ".parquet"))
+  saida <- file.path(dir_output, paste0("dados_censo_escolar_inep_", ano, ".parquet"))
   # Salvar
   write_parquet(df_agregado, saida)
   message("Arquivo agregado salvo: ", saida)
@@ -34,4 +35,16 @@ agregar_municipio <- function(caminho) {
 
 walk(arquivos, agregar_municipio)
 
-# Testagem:
+# Testagem: 
+#A) 
+list.files("input_silver", pattern = "\\.parquet$")
+#B)
+df_teste <- read_parquet("input_silver/dados_censo_escolar_inep_2022.parquet")
+glimpse(df_teste)
+#C)
+df_teste %>% summarise(n_munic = n_distinct(CO_MUNICIPIO))
+#D)
+df_teste %>%
+  ggplot(aes(x = QT_DOC_BAS)) +
+  geom_histogram(bins = 30, fill = "skyblue", color = "white") +
+  labs(title = "Distribuição de docentes por município")
